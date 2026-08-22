@@ -133,7 +133,7 @@ mkdir -p "$RUNTIME_DIR"
 rsync -a --exclude ".build" "$APP_SRC/" "$RUNTIME_DIR/app/"
 rsync -a --exclude '__pycache__' --exclude '*.pyc' --exclude 'tests' \
       --exclude 'fixtures' \
-      "$RUNTIME_SRC/" "$RUNTIME_DIR/brickery/"
+      "$RUNTIME_SRC/brickery/" "$RUNTIME_DIR/brickery/"
 
 # 工作台前端：server.py 的 _FRONTEND_DIR 解析为 brickery-runtime/web/
 mkdir -p "$RUNTIME_DIR/web"
