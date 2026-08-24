@@ -1,0 +1,96 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'brickery/web/**'
+      - 'web/**'
+      - 'app/**'
+      - 'scripts/**'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [release-request]
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: BrickeryWorkbench
+  VERSION: 0.1.0
+  TAG: v0.1.0
+  CORE_REPO: https://github.com/suipu-boop/brickery.git
+  VAULT_REPO: https://github.com/suipu-boop/brick-vault.git
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 准备内嵌 Python（python-build-standalone arm64 3.12）
+        run: |
+          set -euo pipefail
+          RELEASE_JSON="$(curl -s https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest)"
+          ASSET_URL="$(echo "$RELEASE_JSON" | python3 -c "
+import json, sys
+for a in json.load(sys.stdin)['assets']:
+    n = a['name']
+    if n.startswith('cpython-3.12') and 'aarch64-apple-darwin-install_only' in n and 'debug' not in n:
+        print(a['browser_download_url']); break
+")"
+          [ -n "$ASSET_URL" ] || { echo "未找到 python-build-standalone arm64 3.12 资产"; exit 1; }
+          echo "下载: $ASSET_URL"
+          curl -sL -o /tmp/pybs.tar.gz "$ASSET_URL"
+          mkdir -p temp/python
+          tar -xzf /tmp/pybs.tar.gz -C temp/python --strip-components=1
+          temp/python/bin/python3 --version
+
+      - name: 预装 llama-cpp-python（失败不阻塞出包）
+        continue-on-error: true
+        run: |
+          temp/python/bin/python3 -m pip install --no-cache-dir llama-cpp-python==0.3.34 numpy || \
+            echo "警告: llama-cpp-python 安装失败，本次产物不含本地推理依赖"
+
+      - name: 安装 dmgbuild（构建 DMG 用）
+        run: |
+          python3 -m pip install --user dmgbuild || python3 -m pip install --user --break-system-packages dmgbuild
+
+      - name: 构建 App + DMG
+        env:
+          BRICKERY_WORKBENCH_NAME: ${{ env.APP_NAME }}
+          BRICKERY_WORKBENCH_VERSION: ${{ env.VERSION }}
+          BRICKERY_CORE_REPO: ${{ env.CORE_REPO }}
+          BRICKERY_VAULT_REPO: ${{ env.VAULT_REPO }}
+        run: |
+          bash scripts/build_workbench_app.sh
+
+      - name: 核对产物
+        run: |
+          echo "=== 产物 ==="
+          ls -l output/
+          echo "=== dmg 校验 ==="
+          md5 -q output/${APP_NAME}-${VERSION}.dmg
+          ls -l output/${APP_NAME}-${VERSION}.dmg
+
+      - name: 替换 Release 资产（同名先删后传，tag 不变）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$TAG" "output/${APP_NAME}-${VERSION}.dmg" \
+            --clobber --repo "${GITHUB_REPOSITORY}"
+          echo "=== 替换后资产列表 ==="
+          gh release view "$TAG" --repo "${GITHUB_REPOSITORY}" --json assets --jq '.assets[] | "\(.name) \(.size) \(.updatedAt)"'
+
+      - name: 发布报告
+        run: |
+          SIZE="$(stat -f%z "output/${APP_NAME}-${VERSION}.dmg")"
+          MD5="$(md5 -q "output/${APP_NAME}-${VERSION}.dmg")"
+          echo "## 自动发布完成" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 触发来源: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 构建 commit: ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 产物: ${APP_NAME}-${VERSION}.dmg（${SIZE} 字节）" >> "$GITHUB_STEP_SUMMARY"
+          echo "- md5: \`${MD5}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 已替换 Release ${TAG} 同名资产" >> "$GITHUB_STEP_SUMMARY"
