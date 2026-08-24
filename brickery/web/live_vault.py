@@ -164,6 +164,9 @@ def ensure_brick_local(vault_root: str, brick_rel: str) -> Tuple[bool, Optional[
     """
     root = Path(vault_root)
     target = root / brick_rel
+    # 本地已完整落盘（含 brick.json）则直接跳过联网校验，避免每次组装都拉 GitHub
+    if target.is_dir() and (target / "brick.json").is_file():
+        return True, None
     listing, err = _api_dir_listing(brick_rel)
     if err:
         return False, f"无法读取积木目录 {brick_rel}：{err}"

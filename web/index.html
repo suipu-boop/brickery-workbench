@@ -379,7 +379,7 @@
       </div>
       <div class="empty" id="empty-hint">
         <span class="big">底座已就位</span>
-        从左侧点积木卡片，选中后即转移到组装区
+        未选积木也没关系，内置积木已随底座开箱即用，可直接产出
       </div>
       <div id="assembly-list"></div>
     </div>
@@ -677,20 +677,18 @@ async function checkPlan() {
       return;
     }
     const p = data.plan;
-    $('plan-order').innerHTML = p.order.map(n => `<b>${esc(n)}</b>`).join(' → ');
-    const res = p.resources_total;
+    $('plan-order').innerHTML = p.order.length
+      ? p.order.map(n => `<b>${esc(n)}</b>`).join(' → ')
+      : '（纯底座：内置积木开箱即用，零选择可直接产出）';
+    const res = p.resources_total || {};
     $('plan-res').innerHTML = `
-      <span class="item">内存预算 <b>${res.memory_mb}MB</b></span>
-      <span class="item">磁盘预算 <b>${res.disk_mb}MB</b></span>
-      <span class="item">端口 <b>${res.ports.join(',') || '无'}</b></span>`;
-    if (!selected.size) {
-      $('produce-btn').disabled = true;
-      $('step2').classList.remove('active');
-      $('step3').classList.remove('active');
-    } else {
-      $('step2').classList.add('active');
-      $('produce-btn').disabled = false;
-    }
+      <span class="item">内存预算 <b>${res.memory_mb || 0}MB</b></span>
+      <span class="item">磁盘预算 <b>${res.disk_mb || 0}MB</b></span>
+      <span class="item">端口 <b>${(res.ports || []).join(',') || '无'}</b></span>`;
+    // 零选择也允许产出：内置积木随底座开箱即用
+    $('step2').classList.add('active');
+    $('step3').classList.add('active');
+    $('produce-btn').disabled = false;
   } catch (e) {
     $('error').textContent = '校验请求失败：' + e.message;
     $('produce-btn').disabled = true;
