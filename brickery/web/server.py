@@ -123,6 +123,8 @@ class BrickeryHandler(BaseHTTPRequestHandler):
                 "tags": b.get("tags"),
                 "capabilities": b.get("capabilities"),
                 "dependencies": b.get("dependencies"),
+                # 内置判定：无二进制声明（binary_size 为空/0）且详情完整 → 默认进组装区
+                "builtin": not (b.get("binary_size") or 0) and not b.get("_partial"),
             }
             if b.get("category") == "engine":
                 engines.append(item)  # engine 为底座默认能力，单独返回供底座区展示
