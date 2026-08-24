@@ -30,6 +30,7 @@
 #   BRICKERY_WORKBENCH_OUT      产出目录（默认 <repo>/output）
 #   BRICKERY_DMG_PY             dmgbuild 受管 python（默认 ~/.workbuddy/...）
 #   BRICKERY_CORE_REPO          内核仓库地址（默认 https://github.com/suipu-boop/brickery.git）
+#   BRICKERY_VAULT_REPO         积木库仓库地址（默认 https://github.com/suipu-boop/brick-vault.git）
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -138,6 +139,17 @@ rsync -a --exclude '__pycache__' --exclude '*.pyc' --exclude 'tests' \
 # 工作台前端：server.py 的 _FRONTEND_DIR 解析为 brickery-runtime/web/
 mkdir -p "$RUNTIME_DIR/web"
 cp "$FRONTEND_SRC" "$RUNTIME_DIR/web/index.html"
+
+# 积木源快照（vendored）：内核 _resolve_skill_repo_url 优先解析此目录，离线可用。
+# 仅元数据（index.json + 各 brick.json，~28KB），引擎二进制不进包、仍按需下载。
+if [ -d "$VAULT_DIR/skills" ]; then
+    echo "==> 打包积木源快照（vendored/skills）"
+    mkdir -p "$RUNTIME_DIR/vendored"
+    rsync -a --exclude '__pycache__' --exclude '*.pyc' \
+          "$VAULT_DIR/skills/" "$RUNTIME_DIR/vendored/skills/"
+else
+    echo "  （未找到积木库快照 $VAULT_DIR/skills，跳过 vendored 离线源）"
+fi
 
 # ---- 4) 打包内嵌 python（对齐 _bundle_embedded_python） ----
 echo "==> 打包内嵌 python"
