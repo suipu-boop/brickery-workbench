@@ -446,6 +446,8 @@ async function loadBricks() {
     if (data.error) throw new Error(data.error);
     bricks = data.bricks || [];
     engines = data.engines || [];
+    // 内置积木（无二进制、不占空间）默认进组装区，不出现在待选区
+    (bricks || []).forEach(b => { if (b.builtin) selected.add(b.name); });
     renderBase();
     renderBrickList();
   } catch (e) {
@@ -478,6 +480,7 @@ function collapseAll() {
 function renderBrickList() {
   const q = $('search').value.trim().toLowerCase();
   const list = bricks.filter(b => {
+    if (b.builtin) return false; // 内置积木不出现在待选区
     if (riskFilter !== 'all' && b.risk_level !== riskFilter) return false;
     if (catFilter !== 'all' && (b.category || '未分类') !== catFilter) return false;
     if (selected.has(b.name)) return false; // 已选中的积木转移到组装区，从积木库消失
@@ -488,11 +491,11 @@ function renderBrickList() {
         || (b.tags || []).some(t => t.toLowerCase().includes(q));
   });
 
-  $('brick-count').textContent = list.length + ' / ' + bricks.length;
+  $('brick-count').textContent = list.length + ' / ' + bricks.filter(b => !b.builtin).length;
   currentFiltered = list;
   renderCatTabs();
 
-  if (!bricks.length) {
+  if (!bricks.filter(b => !b.builtin).length) {
     $('brick-list').innerHTML = '<div class="state-msg">积木库为空</div>';
     return;
   }
@@ -633,9 +636,10 @@ function renderAssembly() {
     return `<div class="chip" onclick="toggleChip('${esc(name)}')">
       <span class="order-no">${i + 1}</span>
       <span class="c-name">${esc(name)}</span>
+      ${b.builtin ? '<span class="builtin-tag">内置</span>' : ''}
       <span class="risk ${esc(b.risk_level)}" title="${RISK_TIP[b.risk_level] || ''}">${RISK_TEXT[b.risk_level] || esc(b.risk_level)}</span>
       ${(b.requires || []).length ? `<span class="c-deps">依赖 ${deps}</span>` : ''}
-      <button class="rm" onclick="event.stopPropagation(); removeSelect('${esc(name)}')" title="移除">×</button>
+      ${b.builtin ? '' : `<button class="rm" onclick="event.stopPropagation(); removeSelect('${esc(name)}')" title="移除">×</button>`}
       <div class="c-detail">
         <div><span class="d-label">说明</span> ${esc(b.description || b.summary || '（无）')}</div>
         ${(b.tags || []).length ? `<div><span class="d-label">标签</span> ${(b.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join(' ')}</div>` : ''}

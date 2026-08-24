@@ -110,6 +110,7 @@ def fetch_bricks_online(vault_root: str) -> Tuple[Optional[List[dict]], Optional
                 "summary": str(entry.get("summary") or ""),
                 "description": "", "category": str(entry.get("category") or ""),
                 "tags": [], "capabilities": [], "dependencies": [],
+                "binary_size": 0,
                 "_partial": True,
             })
             continue
@@ -132,6 +133,7 @@ def fetch_bricks_online(vault_root: str) -> Tuple[Optional[List[dict]], Optional
             "tags": [str(t) for t in (raw_manifest.get("tags") or [])],
             "capabilities": [str(c) for c in (raw_manifest.get("capabilities") or [])],
             "dependencies": list(raw_manifest.get("dependencies") or []),
+            "binary_size": int(raw_manifest.get("binary_size") or 0),
             "path": rel + "/",
         })
     if warnings:
