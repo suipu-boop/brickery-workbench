@@ -55,7 +55,7 @@ jobs:
 
       - name: 安装 dmgbuild（构建 DMG 用）
         run: |
-          python3 -m pip install --user dmgbuild || python3 -m pip install --user --break-system-packages dmgbuild
+          python3 -m pip install --user dmgbuild pillow || python3 -m pip install --user --break-system-packages dmgbuild pillow
 
       - name: 构建 App + DMG
         env:
