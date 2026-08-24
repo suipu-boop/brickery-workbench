@@ -43,7 +43,7 @@ PORT="${BRICKERY_WORKBENCH_PORT:-8765}"
 OUT_DIR="${BRICKERY_WORKBENCH_OUT:-$REPO_ROOT/output}"
 DMG_PY="${BRICKERY_DMG_PY:-/Users/suipu/.workbuddy/binaries/python/envs/default/bin/python3}"
 CORE_REPO="${BRICKERY_CORE_REPO:-https://github.com/suipu-boop/brickery.git}"
-VAULT_REPO="${BRICKERY_VAULT_REPO:-https://github.com/suipu-boop/brick-vault.git}"
+VAULT_REPO="${BRICKERY_VAULT_REPO:-https://github.com/suipu-boop/shadeling-bricks.git}"
 
 APP_SRC="$REPO_ROOT/app"
 WEB_BACKEND_SRC="$REPO_ROOT/brickery/web"
@@ -152,13 +152,13 @@ cp "$FRONTEND_SRC" "$RUNTIME_DIR/web/index.html"
 
 # 积木源快照（vendored）：内核 _resolve_skill_repo_url 优先解析此目录，离线可用。
 # 仅元数据（index.json + 各 brick.json，~28KB），引擎二进制不进包、仍按需下载。
-if [ -d "$VAULT_DIR/skills" ]; then
-    echo "==> 打包积木源快照（vendored/skills）"
+if [ -d "$VAULT_DIR/bricks" ]; then
+    echo "==> 打包积木源快照（vendored/bricks）"
     mkdir -p "$RUNTIME_DIR/vendored"
     rsync -a --exclude '__pycache__' --exclude '*.pyc' \
-          "$VAULT_DIR/skills/" "$RUNTIME_DIR/vendored/skills/"
+          "$VAULT_DIR/bricks/" "$RUNTIME_DIR/vendored/bricks/"
 else
-    echo "  （未找到积木库快照 $VAULT_DIR/skills，跳过 vendored 离线源）"
+    echo "  （未找到积木库快照 $VAULT_DIR/bricks，跳过 vendored 离线源）"
 fi
 
 # ---- 4) 打包内嵌 python（对齐 _bundle_embedded_python） ----

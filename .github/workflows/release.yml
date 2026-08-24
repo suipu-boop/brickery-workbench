@@ -21,7 +21,7 @@ env:
   VERSION: 0.1.0
   TAG: v0.1.0
   CORE_REPO: https://github.com/suipu-boop/brickery.git
-  VAULT_REPO: https://github.com/suipu-boop/brick-vault.git
+  VAULT_REPO: https://github.com/suipu-boop/shadeling-bricks.git
 
 jobs:
   build-and-release:
