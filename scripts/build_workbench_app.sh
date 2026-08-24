@@ -43,6 +43,7 @@ PORT="${BRICKERY_WORKBENCH_PORT:-8765}"
 OUT_DIR="${BRICKERY_WORKBENCH_OUT:-$REPO_ROOT/output}"
 DMG_PY="${BRICKERY_DMG_PY:-/Users/suipu/.workbuddy/binaries/python/envs/default/bin/python3}"
 CORE_REPO="${BRICKERY_CORE_REPO:-https://github.com/suipu-boop/brickery.git}"
+VAULT_REPO="${BRICKERY_VAULT_REPO:-https://github.com/suipu-boop/brick-vault.git}"
 
 APP_SRC="$REPO_ROOT/app"
 WEB_BACKEND_SRC="$REPO_ROOT/brickery/web"
@@ -50,6 +51,7 @@ EMBEDDED_PY="$REPO_ROOT/temp/python"
 FRONTEND_SRC="$REPO_ROOT/web/index.html"
 
 CORE_DIR="$REPO_ROOT/temp/brickery-core"
+VAULT_DIR="$REPO_ROOT/temp/brick-vault"
 MERGE_DIR="$REPO_ROOT/temp/runtime-merge"
 RUNTIME_SRC="$MERGE_DIR"
 
@@ -74,6 +76,14 @@ else
     git -C "$CORE_DIR" pull --ff-only --depth 1 2>/dev/null || echo "  （内核拉取失败，沿用本地缓存）"
 fi
 [ -d "$CORE_DIR/brickery" ] || { echo "错误：内核拉取后缺少 brickery/ 包" >&2; exit 1; }
+
+# ---- 0.5) 拉取积木库（vendored 快照源，失败仅告警） ----
+echo "==> 拉取积木库 $VAULT_REPO"
+if [ ! -d "$VAULT_DIR/.git" ]; then
+    git clone --depth 1 "$VAULT_REPO" "$VAULT_DIR" 2>/dev/null || echo "  （积木库拉取失败，vendored 离线源将跳过）"
+else
+    git -C "$VAULT_DIR" pull --ff-only --depth 1 2>/dev/null || echo "  （积木库拉取失败，沿用本地缓存）"
+fi
 
 echo "==> 合并内核 + 工坊后端"
 mkdir -p "$MERGE_DIR"
