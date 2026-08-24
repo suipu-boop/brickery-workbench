@@ -34,12 +34,12 @@ jobs:
           set -euo pipefail
           RELEASE_JSON="$(curl -s https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest)"
           ASSET_URL="$(echo "$RELEASE_JSON" | python3 -c "
-import json, sys
-for a in json.load(sys.stdin)['assets']:
-    n = a['name']
-    if n.startswith('cpython-3.12') and 'aarch64-apple-darwin-install_only' in n and 'debug' not in n:
-        print(a['browser_download_url']); break
-")"
+          import json, sys
+          for a in json.load(sys.stdin)['assets']:
+              n = a['name']
+              if n.startswith('cpython-3.12') and 'aarch64-apple-darwin-install_only' in n and 'debug' not in n:
+                  print(a['browser_download_url']); break
+          ")"
           [ -n "$ASSET_URL" ] || { echo "未找到 python-build-standalone arm64 3.12 资产"; exit 1; }
           echo "下载: $ASSET_URL"
           curl -sL -o /tmp/pybs.tar.gz "$ASSET_URL"
