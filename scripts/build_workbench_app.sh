@@ -150,6 +150,12 @@ rsync -a --exclude '__pycache__' --exclude '*.pyc' --exclude 'tests' \
 mkdir -p "$RUNTIME_DIR/web"
 cp "$FRONTEND_SRC" "$RUNTIME_DIR/web/index.html"
 
+# 写 runtime 版本标识（self_update 自检更新依据；core_commit=拉取的内核 HEAD）
+CORE_SHA="$(git -C "$CORE_DIR" rev-parse HEAD 2>/dev/null || echo '')"
+cat > "$RUNTIME_DIR/brickery/version.json" <<VERSION_JSON
+{"schema":"brickery-version/v1","core_commit":"$CORE_SHA","built_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","previous":""}
+VERSION_JSON
+
 # 积木源快照（vendored）：内核 _resolve_skill_repo_url 优先解析此目录，离线可用。
 # 仅元数据（index.json + 各 brick.json，~28KB），引擎二进制不进包、仍按需下载。
 if [ -d "$VAULT_DIR/bricks" ]; then

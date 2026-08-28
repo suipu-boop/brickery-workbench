@@ -1,0 +1,40 @@
+# 积木工坊下载站自动部署：push main → gh-pages
+#
+# site/index.html 为「积木市场 + App 下载」静态站点（直连 GitHub 数据源），
+# 变更自动同步到 https://suipu-boop.github.io/brickery-workbench/
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 部署站点到 gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: false
+
+      - name: 发布报告
+        run: |
+          echo "## 下载站已部署" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 站点: https://suipu-boop.github.io/brickery-workbench/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- commit: ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
